@@ -178,7 +178,8 @@ def normalize(probabilities):
 def finding_out_parent(parent, one_gene, two_genes):
     """
     Calculating odd so that we can calculate the odd of n_genes in a child
-    It returns an odd"""
+    It returns an odd
+    """
 
     # Finding out and returning odd depending on how many genes has the parent
     if parent in one_gene: 
