@@ -30,8 +30,8 @@ PROBS = {
             True: 0.01,
             False: 0.99
         }
-    },
-
+    }, 
+    
     # Mutation probability
     "mutation": 0.01
 }
@@ -139,8 +139,24 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
-    raise NotImplementedError
+    # Getting gene odds:
+    have_gene = one_gene.union(two_genes)
+    not_gene = set(people) - have_gene
+    joint_one_gene = 1
+    joint_two_genes = 1
+    joint_not_gene = 1
 
+    for person in have_gene:
+        
+        # Does person has parents?
+        if mother := people[person]['mother'] is not None: # Because either exist or neither.
+            father = people[person]['father']
+            mother_odd = finding_out_parent(mother, one_gene, two_genes)
+            father_odd = finding_out_parent(father, one_gene, two_genes)            
+                
+        # There are not parent's info:
+        else:
+            n_person = PROBS["gene"][1]    
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
     """
@@ -159,6 +175,18 @@ def normalize(probabilities):
     """
     raise NotImplementedError
 
+def finding_out_parent(parent, one_gene, two_genes):
+    """
+    Calculating odd so that we can calculate the odd of n_genes in a child
+    It returns an odd"""
+
+    # Finding out and returning odd depending on how many genes has the parent
+    if parent in one_gene: 
+        return 0.5 # odd of transfer a gene if they just have 1 gene
+    elif parent in two_genes:
+        return 1 - PROBS["mutation"] # odd of transfer a gene if they have 2 genes
+    else:
+        return PROBS["mutation"] # odd of transfer genes if they don't have genes
 
 if __name__ == "__main__":
     main()
