@@ -142,21 +142,29 @@ def joint_probability(people, one_gene, two_genes, have_trait):
     # Getting gene odds:
     have_gene = one_gene.union(two_genes)
     not_gene = set(people) - have_gene
-    joint_one_gene = 1
-    joint_two_genes = 1
-    joint_not_gene = 1
+    # Working as the memory of each person concept odd  
+    joint_p = 1 
 
-    for person in have_gene:
-        
-        # Does person has parents?
-        if mother := people[person]['mother'] is not None: # Because either exist or neither.
-            father = people[person]['father']
-            mother_odd = finding_out_parent(mother, one_gene, two_genes)
-            father_odd = finding_out_parent(father, one_gene, two_genes)            
-                
+    for person in people:
+        if (mother := people[person]['mother']) is not None and (father := people[person]['father']) is not None: # Because either exist or neither.
+            gene_odd = parent_child(person, mother, father, one_gene, two_genes)
+            """When people[person]['mother'] is not None it implies how many genes each parent has"""
         # There are not parent's info:
         else:
-            n_person = PROBS["gene"][1]    
+            # get the odd of *n* child gene when we don't know who parents are
+            gene_odd = no_parents_odd(person,one_gene, two_genes)
+
+        # Trait odd depending on genes number
+        if person in one_gene:
+            have_or_not_trait = prob_yesnot_trait(person, have_trait,1)
+        elif person in two_genes:
+            have_or_not_trait = prob_yesnot_trait(person, have_trait,2)
+        else:
+            have_or_not_trait = prob_yesnot_trait(person, have_trait,0)
+
+        joint_p = joint_p * gene_odd * have_or_not_trait
+    return joint_p
+
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
     """
@@ -167,7 +175,6 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     """
     raise NotImplementedError
 
-
 def normalize(probabilities):
     """
     Update `probabilities` such that each probability distribution
@@ -175,12 +182,12 @@ def normalize(probabilities):
     """
     raise NotImplementedError
 
+
 def finding_out_parent(parent, one_gene, two_genes):
     """
-    Calculating odd so that we can calculate the odd of n_genes in a child
-    It returns an odd
+    Returns the odd of give 1 gene to their 'children' depending on 
+    how many GJB2 genes has the parent
     """
-
     # Finding out and returning odd depending on how many genes has the parent
     if parent in one_gene: 
         return 0.5 # odd of transfer a gene if they just have 1 gene
@@ -188,6 +195,52 @@ def finding_out_parent(parent, one_gene, two_genes):
         return 1 - PROBS["mutation"] # odd of transfer a gene if they have 2 genes
     else:
         return PROBS["mutation"] # odd of transfer genes if they don't have genes
+
+    
+def n_gene_odd(person, one_gene, two_genes, mother_odd,father_odd):
+    """
+    Returns the children odd of have N genes depending on the parents info
+    """
+    if person in one_gene:
+        return mother_odd * (1-father_odd) + father_odd * (1-mother_odd)
+    elif person in two_genes:
+        return mother_odd * father_odd
+    else:
+        return (1-mother_odd) * (1-father_odd)
+
+
+def parent_child(person, mother, father, one_gene, two_genes):
+    """
+    Returns the children odd of have n genes, in n depth of family tree"
+    """
+    
+    mother_odd = finding_out_parent(mother, one_gene, two_genes)
+    father_odd = finding_out_parent(father, one_gene, two_genes)
+    # get the odd of *n* child gene when we know who parents are
+    gene_odd = n_gene_odd(person, one_gene, two_genes, mother_odd, father_odd)
+    return gene_odd
+    
+
+# if (mother := people[person]['mother']) and (father := people[person]['father']): # Because either exist or neither.
+def no_parents_odd(person,one_gene, two_genes):
+    """
+    Return directly the odd from the dictionary PROBS for anyone who doesn't have parents"""
+    if person in one_gene:
+        return PROBS["gene"][1]
+    elif person in two_genes:
+        return PROBS["gene"][2]
+    else:
+        return PROBS["gene"][0]
+
+
+def prob_yesnot_trait(person, have_trait, gen_number):
+    """
+    Returns the probability of show or not show a GJB2 GEN depending on the number of the genes in the person 
+    """
+    if person in have_trait:
+        PROBS["trait"][gen_number][True]
+    else:
+        PROBS["trait"][gen_number][False]
 
 if __name__ == "__main__":
     main()
