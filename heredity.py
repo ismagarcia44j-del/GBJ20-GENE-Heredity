@@ -69,7 +69,7 @@ def main():
             (people[person]["trait"] is not None and
              people[person]["trait"] != (person in have_trait))
             for person in names
-        )
+            )
         if fails_evidence:
             continue
 
@@ -139,9 +139,6 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
-    # Getting gene odds:
-    have_gene = one_gene.union(two_genes)
-    not_gene = set(people) - have_gene
     # Working as the memory of each person concept odd  
     joint_p = 1 
 
@@ -173,15 +170,33 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     Which value for each distribution is updated depends on whether
     the person is in `have_gene` and `have_trait`, respectively.
     """
-    raise NotImplementedError
+
+    for person in probabilities:
+        if person in one_gene: 
+            n = 1
+        elif person in two_genes:
+            n = 2
+        else: 
+            n = 0
+        probabilities[person]["gene"][n] += p
+        
+        probabilities[person]["trait"][person in have_trait] += p
+    
 
 def normalize(probabilities):
     """
     Update `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
-    raise NotImplementedError
 
+    for person in probabilities:
+        for type_distribution in ["gene","trait"]:
+            distribution = probabilities[person][type_distribution]
+            total = sum(distribution.values())
+            
+            for key in distribution:
+                distribution[key] /= total
+        
 
 def finding_out_parent(parent, one_gene, two_genes):
     """
@@ -237,10 +252,8 @@ def prob_yesnot_trait(person, have_trait, gen_number):
     """
     Returns the probability of show or not show a GJB2 GEN depending on the number of the genes in the person 
     """
-    if person in have_trait:
-        PROBS["trait"][gen_number][True]
-    else:
-        PROBS["trait"][gen_number][False]
+    return PROBS["trait"][gen_number][person in have_trait]
+    
 
 if __name__ == "__main__":
     main()
